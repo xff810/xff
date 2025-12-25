@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>手机3D立方体</title>
+    <style>
+        body { margin: 0; background: #000; }
+        #tip { position: absolute; top: 10px; width: 100%; color: #fff; text-align: center; font-size: 14px; font-family: sans-serif; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="tip">手指拖拽旋转 | 双指捏合缩放</div>
+    <script>
+        // 初始化场景、相机、渲染器
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 创建立方体（3D正方形）
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const material = new THREE.MeshNormalMaterial(); // 自发光材质，无需光源
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+        camera.position.z = 5;
+
+        // 触摸控制变量
+        let isDragging = false;
+        let lastX = 0, lastY = 0;
+        let rotateX = 0, rotateY = 0;
+        let scale = 1;
+
+        // 触摸开始
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                lastX = e.touches[0].clientX;
+                lastY = e.touches[0].clientY;
+            }
+            // 双指缩放
+            else if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                scale = Math.sqrt(dx*dx + dy*dy) / 100;
+            }
+        });
+
+        // 触摸移动
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (isDragging && e.touches.length === 1) {
+                const currentX = e.touches[0].clientX;
+                const currentY = e.touches[0].clientY;
+                // 计算旋转角度
+                rotateY += (currentX - lastX) * 0.01;
+                rotateX += (currentY - lastY) * 0.01;
+                lastX = currentX;
+                lastY = currentY;
+            }
+            // 双指缩放
+            else if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                scale = Math.sqrt(dx*dx + dy*dy) / 100;
+            }
+        });
+
+        // 触摸结束
+        renderer.domElement.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // 窗口自适应
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            // 应用旋转和缩放
+            cube.rotation.x = rotateX;
+            cube.rotation.y = rotateY;
+            cube.scale.set(scale, scale, scale);
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
